@@ -257,6 +257,7 @@ const Home = () => {
       <div className="mt-5">
         <div className="card shadow-sm">
           <div className="card-body">
+            <br></br>
             <h5 className="text-center mb-3">To explore more, click on the below buttons:</h5>
             <div className="d-flex justify-content-center">
               <Link to="/expense-tracker" className="btn btn-primary me-3">
@@ -266,6 +267,7 @@ const Home = () => {
                 Go to Budget Management
               </Link>
             </div>
+            <br></br>
           </div>
         </div>
       </div>
