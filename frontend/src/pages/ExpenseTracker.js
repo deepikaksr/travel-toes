@@ -1,13 +1,38 @@
 import React, { useState } from 'react';
+import { Line } from 'react-chartjs-2';
+import { Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+  ArcElement, // Import ArcElement for pie chart
+} from 'chart.js';
+
+// Register the necessary components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+  ArcElement // Register ArcElement here
+);
 
 const ExpenseTracker = () => {
   const [date, setDate] = useState('');
   const [expenses, setExpenses] = useState({});
   const [totalExpenses, setTotalExpenses] = useState(0);
-  const [category, setCategory] = useState('Food'); // Default category
+  const [category, setCategory] = useState('Food');
   const [customCategory, setCustomCategory] = useState('');
-  const [editingExpense, setEditingExpense] = useState(null); // For editing
-  const [amount, setAmount] = useState(0); // Single state for amount
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [amount, setAmount] = useState(0);
 
   const handleDateChange = (event) => {
     setDate(event.target.value);
@@ -25,56 +50,98 @@ const ExpenseTracker = () => {
       }
 
       if (editingExpense) {
-        // If editing an expense, replace it
         newExpenses[date][editingExpense.index] = {
-          amount: parseFloat(amount), // Ensure amount is a number
-          category: categoryToUse, // Use the updated category
+          amount: parseFloat(amount),
+          category: categoryToUse,
         };
-        setEditingExpense(null); // Clear editing state after update
+        setEditingExpense(null);
       } else {
-        // Otherwise, add a new expense
         newExpenses[date].push({ amount: parseFloat(amount), category: categoryToUse });
       }
 
       setExpenses(newExpenses);
       setTotalExpenses((prevTotal) => prevTotal + (editingExpense ? parseFloat(amount) - parseFloat(expenses[editingExpense.date][editingExpense.index].amount) : parseFloat(amount)));
-      resetForm(); // Reset form fields except date
+      resetForm();
     }
   };
 
   const resetForm = () => {
-    setAmount(0); // Reset amount
-    setCategory('Food'); // Reset category to default
-    setCustomCategory(''); // Reset custom category
-    setEditingExpense(null); // Clear editing state
+    setAmount(0);
+    setCategory('Food');
+    setCustomCategory('');
+    setEditingExpense(null);
   };
 
   const handleEditExpense = (date, index) => {
     const expenseToEdit = expenses[date][index];
     setEditingExpense({ date, index });
-    setAmount(expenseToEdit.amount); // Set amount to the expense amount
-    setCategory(expenseToEdit.category); // Set category for editing
+    setAmount(expenseToEdit.amount);
+    setCategory(expenseToEdit.category);
     if (expenseToEdit.category === 'Other') {
-      setCustomCategory(expenseToEdit.category); // Set custom category if 'Other'
+      setCustomCategory(expenseToEdit.category);
     } else {
-      setCustomCategory(''); // Clear custom category if it's not 'Other'
+      setCustomCategory('');
     }
   };
 
   const handleNextDate = () => {
-    // Clear the amount and editing state
     resetForm();
-
-    // Clear the expenses for the current date if needed
-    // If you want to keep the previous date's expenses, do not clear expenses here
-    setDate(''); // Clear the current date
+    setDate('');
   };
 
-  // Calculate daily totals
   const dailyTotals = Object.entries(expenses).map(([date, expenseList]) => {
     const dailyTotal = expenseList.reduce((sum, expense) => sum + expense.amount, 0);
     return { date, total: dailyTotal, expenses: expenseList };
   });
+
+  // Prepare data for line chart (spending trend)
+  const lineChartData = {
+    labels: dailyTotals.map(entry => entry.date),
+    datasets: [
+      {
+        label: 'Daily Spending',
+        data: dailyTotals.map(entry => entry.total),
+        fill: true,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.4,
+      },
+    ],
+  };
+
+  // Prepare data for pie chart (category breakdown)
+  const categoryTotals = {};
+  dailyTotals.forEach(entry => {
+    entry.expenses.forEach(expense => {
+      if (categoryTotals[expense.category]) {
+        categoryTotals[expense.category] += expense.amount;
+      } else {
+        categoryTotals[expense.category] = expense.amount;
+      }
+    });
+  });
+
+  const pieChartData = {
+    labels: Object.keys(categoryTotals),
+    datasets: [
+      {
+        label: 'Category Spending Breakdown',
+        data: Object.values(categoryTotals),
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.6)',
+          'rgba(54, 162, 235, 0.6)',
+          'rgba(255, 206, 86, 0.6)',
+          'rgba(75, 192, 192, 0.6)',
+          'rgba(153, 102, 255, 0.6)',
+          'rgba(255, 159, 64, 0.6)',
+        ],
+      },
+    ],
+  };
+
+  const chartOptions = {
+    maintainAspectRatio: false, // Disable aspect ratio maintenance
+  };
 
   return (
     <div className="container">
@@ -97,8 +164,8 @@ const ExpenseTracker = () => {
               placeholder="Expense Amount"
               required
               className="form-control"
-              value={amount || ''} // Allow empty state for initial render
-              onChange={(e) => setAmount(e.target.value)} // Use setAmount to update the state
+              value={amount || ''}
+              onChange={(e) => setAmount(e.target.value)}
             />
           </div>
           <div className="mb-3">
@@ -109,7 +176,7 @@ const ExpenseTracker = () => {
                 const selectedCategory = e.target.value;
                 setCategory(selectedCategory);
                 if (selectedCategory !== 'Other') {
-                  setCustomCategory(''); // Clear custom category if not 'Other'
+                  setCustomCategory('');
                 }
               }}
             >
@@ -127,7 +194,7 @@ const ExpenseTracker = () => {
                 onChange={(e) => setCustomCategory(e.target.value)}
                 placeholder="Specify Other Category"
                 className="form-control"
-                required={category === 'Other'} // Make it required if 'Other' is selected
+                required={category === 'Other'}
               />
             </div>
           )}
@@ -168,6 +235,39 @@ const ExpenseTracker = () => {
         <button className="btn btn-secondary" onClick={handleNextDate}>
           Next Date
         </button>
+      </div>
+
+      {dailyTotals.length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-center">Spending Trend</h4>
+          <div style={{ position: 'relative', height: '300px', width: '100%' }}>
+            <Line data={lineChartData} options={chartOptions} />
+          </div>
+        </div>
+      )}
+
+      {Object.keys(categoryTotals).length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-center">Category Spending Breakdown</h4>
+          <div style={{ position: 'relative', height: '300px', width: '100%' }}>
+            <Pie data={pieChartData} options={chartOptions} />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4">
+        <div className="card">
+          <div className="card-body">
+            <h5 className="card-title">Tips for Better Expense Management</h5>
+            <ul>
+              <li>Track your expenses daily to stay within your budget.</li>
+              <li>Set aside a specific amount for discretionary spending.</li>
+              <li>Review your spending patterns monthly and adjust as needed.</li>
+              <li>Consider using budgeting apps for better tracking.</li>
+              <li>Always keep a buffer for unexpected expenses.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
