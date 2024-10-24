@@ -3,6 +3,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
+const expenseRoutes = require('./routes/expenses'); 
+const budgetRoutes = require('./routes/budgets');
 require('dotenv').config(); // Load environment variables
 
 const app = express();
@@ -22,6 +24,8 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/expenses', expenseRoutes); 
+app.use('/api/budgets', budgetRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;
