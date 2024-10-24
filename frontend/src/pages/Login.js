@@ -19,7 +19,10 @@ const Login = () => {
       const data = await res.json();
 
       if (res.ok) {
+        // Store token and userId in localStorage
         localStorage.setItem('token', data.token);
+        localStorage.setItem('userId', data.userId); // Store the userId
+
         navigate('/home'); // Redirect to home page
       } else {
         alert(data.msg); // Display error message
