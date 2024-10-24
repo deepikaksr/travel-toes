@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Line } from 'react-chartjs-2';
-import { Pie } from 'react-chartjs-2';
+import React, { useState, useEffect } from 'react';
+import { Line, Pie } from 'react-chartjs-2';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,10 +10,9 @@ import {
   Filler,
   Tooltip,
   Legend,
-  ArcElement, // Import ArcElement for pie chart
+  ArcElement,
 } from 'chart.js';
 
-// Register the necessary components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -22,250 +21,444 @@ ChartJS.register(
   Filler,
   Tooltip,
   Legend,
-  ArcElement // Register ArcElement here
+  ArcElement
 );
 
 const ExpenseTracker = () => {
+  const navigate = useNavigate();
   const [date, setDate] = useState('');
-  const [expenses, setExpenses] = useState({});
+  const [expenses, setExpenses] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [category, setCategory] = useState('Food');
   const [customCategory, setCustomCategory] = useState('');
   const [editingExpense, setEditingExpense] = useState(null);
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState('');
 
-  const handleDateChange = (event) => {
-    setDate(event.target.value);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    fetchExpenses();
+  }, [navigate]);
+
+  const fetchExpenses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/expenses', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setExpenses(data.expenses);
+        setTotalExpenses(data.totalExpenses);
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    }
   };
 
-  const handleAddExpense = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      navigate('/');
+      return;
+    }
 
-    const categoryToUse = category === 'Other' ? customCategory : category;
+    const amountValue = parseFloat(amount);
+    const categoryValue = category === 'Other' ? customCategory : category;
 
-    if (date && amount && categoryToUse) {
-      const newExpenses = { ...expenses };
-      if (!newExpenses[date]) {
-        newExpenses[date] = [];
-      }
+    if (!date || isNaN(amountValue) || !categoryValue) {
+      alert('Please fill in all fields correctly');
+      return;
+    }
+
+    const expenseData = {
+      date,
+      category: categoryValue,
+      amount: amountValue,
+    };
+
+    try {
+      let url = 'http://localhost:5000/api/expenses';
+      let method = 'POST';
 
       if (editingExpense) {
-        newExpenses[date][editingExpense.index] = {
-          amount: parseFloat(amount),
-          category: categoryToUse,
-        };
-        setEditingExpense(null);
-      } else {
-        newExpenses[date].push({ amount: parseFloat(amount), category: categoryToUse });
+        url = `http://localhost:5000/api/expenses/${editingExpense._id}`;
+        method = 'PUT';
       }
 
-      setExpenses(newExpenses);
-      setTotalExpenses((prevTotal) => prevTotal + (editingExpense ? parseFloat(amount) - parseFloat(expenses[editingExpense.date][editingExpense.index].amount) : parseFloat(amount)));
-      resetForm();
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(expenseData)
+      });
+
+      if (response.ok) {
+        resetForm();
+        fetchExpenses();
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to save expense. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      alert('Failed to save expense. Please try again.');
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    if (!window.confirm('Are you sure you want to delete this expense?')) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/expenses/${expenseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        fetchExpenses();
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to delete expense.');
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('Failed to delete expense. Please try again.');
+    }
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setDate(expense.date.split('T')[0]);
+    setAmount(expense.amount.toString());
+    
+    if (['Food', 'Transport', 'Shopping', 'Entertainment'].includes(expense.category)) {
+      setCategory(expense.category);
+      setCustomCategory('');
+    } else {
+      setCategory('Other');
+      setCustomCategory(expense.category);
     }
   };
 
   const resetForm = () => {
-    setAmount(0);
+    setDate('');
+    setAmount('');
     setCategory('Food');
     setCustomCategory('');
     setEditingExpense(null);
   };
 
-  const handleEditExpense = (date, index) => {
-    const expenseToEdit = expenses[date][index];
-    setEditingExpense({ date, index });
-    setAmount(expenseToEdit.amount);
-    setCategory(expenseToEdit.category);
-    if (expenseToEdit.category === 'Other') {
-      setCustomCategory(expenseToEdit.category);
-    } else {
-      setCustomCategory('');
+  // Chart data preparation
+  const expensesByDate = expenses.reduce((acc, expense) => {
+    const dateKey = expense.date.split('T')[0];
+    if (!acc[dateKey]) {
+      acc[dateKey] = [];
     }
-  };
+    acc[dateKey].push(expense);
+    return acc;
+  }, {});
 
-  const handleNextDate = () => {
-    resetForm();
-    setDate('');
-  };
-
-  const dailyTotals = Object.entries(expenses).map(([date, expenseList]) => {
-    const dailyTotal = expenseList.reduce((sum, expense) => sum + expense.amount, 0);
-    return { date, total: dailyTotal, expenses: expenseList };
-  });
-
-  // Prepare data for line chart (spending trend)
   const lineChartData = {
-    labels: dailyTotals.map(entry => entry.date),
-    datasets: [
-      {
-        label: 'Daily Spending',
-        data: dailyTotals.map(entry => entry.total),
-        fill: true,
-        borderColor: 'rgba(75, 192, 192, 1)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        tension: 0.4,
-      },
-    ],
+    labels: Object.keys(expensesByDate).sort(),
+    datasets: [{
+      label: 'Daily Spending',
+      data: Object.entries(expensesByDate).map(([date, dayExpenses]) => 
+        dayExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+      ),
+      fill: true,
+      borderColor: 'rgba(75, 192, 192, 1)',
+      backgroundColor: 'rgba(75, 192, 192, 0.2)',
+      tension: 0.4,
+    }]
   };
 
-  // Prepare data for pie chart (category breakdown)
-  const categoryTotals = {};
-  dailyTotals.forEach(entry => {
-    entry.expenses.forEach(expense => {
-      if (categoryTotals[expense.category]) {
-        categoryTotals[expense.category] += expense.amount;
-      } else {
-        categoryTotals[expense.category] = expense.amount;
-      }
-    });
-  });
+  const categoryTotals = expenses.reduce((acc, expense) => {
+    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+    return acc;
+  }, {});
 
   const pieChartData = {
     labels: Object.keys(categoryTotals),
-    datasets: [
-      {
-        label: 'Category Spending Breakdown',
-        data: Object.values(categoryTotals),
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.6)',
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(153, 102, 255, 0.6)',
-          'rgba(255, 159, 64, 0.6)',
-        ],
-      },
-    ],
+    datasets: [{
+      data: Object.values(categoryTotals),
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.6)',
+        'rgba(54, 162, 235, 0.6)',
+        'rgba(255, 206, 86, 0.6)',
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(153, 102, 255, 0.6)',
+        'rgba(255, 159, 64, 0.6)',
+      ],
+    }]
   };
 
   const chartOptions = {
-    maintainAspectRatio: false, // Disable aspect ratio maintenance
+    responsive: true,
+    maintainAspectRatio: true,
+    aspectRatio: 4,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          boxWidth: 12,
+          padding: 8,
+          font: {
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        titleFont: {
+          size: 12
+        },
+        bodyFont: {
+          size: 11
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 10
+          }
+        }
+      },
+      y: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 10
+          }
+        }
+      }
+    }
   };
 
+  const pieChartOptions = {
+    ...chartOptions,
+    aspectRatio: 3.0,
+    plugins: {
+      ...chartOptions.plugins,
+      legend: {
+        ...chartOptions.plugins.legend,
+        position: 'right',
+      }
+    }
+  };
+
+  // Tips with icons
+  const tips = [
+    {
+      icon: "📊",
+      tip: "Track your spending regularly to stay aware of your financial situation.",
+      color: "bg-blue-50"
+    },
+    {
+      icon: "🎯",
+      tip: "Set a budget for different categories and stick to it.",
+      color: "bg-green-50"
+    },
+    {
+      icon: "📈",
+      tip: "Review your expenses at the end of the month to identify areas for improvement.",
+      color: "bg-yellow-50"
+    },
+    {
+      icon: "💰",
+      tip: "Use cash for discretionary spending to help limit overspending.",
+      color: "bg-purple-50"
+    },
+    {
+      icon: "🏦",
+      tip: "Consider creating an emergency fund to handle unexpected expenses.",
+      color: "bg-pink-50"
+    },
+    {
+      icon: "🛒",
+      tip: "Prioritize needs over wants when making purchases to avoid impulsive buying.",
+      color: "bg-orange-50"
+    }
+  ];
+
   return (
-    <div className="container">
-      <h2 className="text-center mb-4">Expense Tracker</h2>
-
-      <div className="mb-4">
-        <input
-          type="date"
-          value={date}
-          onChange={handleDateChange}
-          className="form-control"
-        />
+    <div className="container mt-5">
+      <div className="text-center mb-5">
+        <h2 className="display-4 mb-3">Expense Tracker</h2>
+        <h3 className="text-muted">Total Expenses: ${totalExpenses.toFixed(2)}</h3>
       </div>
-
-      {date && (
-        <form onSubmit={handleAddExpense}>
-          <div className="mb-3">
-            <input
-              type="number"
-              placeholder="Expense Amount"
-              required
-              className="form-control"
-              value={amount || ''}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
-          <div className="mb-3">
-            <select
-              className="form-select"
-              value={category}
-              onChange={(e) => {
-                const selectedCategory = e.target.value;
-                setCategory(selectedCategory);
-                if (selectedCategory !== 'Other') {
-                  setCustomCategory('');
-                }
-              }}
-            >
-              <option value="Food">Food</option>
-              <option value="Accommodation">Accommodation</option>
-              <option value="Travel">Travel</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+      
+      <form onSubmit={handleSubmit} className="bg-light p-4 rounded shadow-sm">
+        <div className="mb-3">
+          <label htmlFor="date" className="form-label">Date:</label>
+          <input
+            type="date"
+            id="date"
+            className="form-control"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+        </div>
+        
+        <div className="mb-3">
+          <label htmlFor="amount" className="form-label">Amount:</label>
+          <input
+            type="number"
+            id="amount"
+            className="form-control"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+            step="0.01"
+            min="0"
+          />
+        </div>
+        
+        <div className="mb-3">
+          <label htmlFor="category" className="form-label">Category:</label>
+          <select
+            id="category"
+            className="form-select"
+            value={category}
+            onChange={(e) => {
+              if (e.target.value === 'Other') {
+                setCustomCategory('');
+              }
+              setCategory(e.target.value);
+            }}
+          >
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Other">Other</option>
+          </select>
           {category === 'Other' && (
-            <div className="mb-3">
-              <input
-                type="text"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                placeholder="Specify Other Category"
-                className="form-control"
-                required={category === 'Other'}
-              />
-            </div>
+            <input
+              type="text"
+              className="form-control mt-2"
+              placeholder="Specify category"
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+              required
+            />
           )}
+        </div>
+        
+        <div className="d-grid">
           <button type="submit" className="btn btn-primary">
             {editingExpense ? 'Update Expense' : 'Add Expense'}
           </button>
-        </form>
-      )}
-
-      {dailyTotals.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-center">Daily Expense Summary</h4>
-          <ul className="list-group">
-            {dailyTotals.map(({ date, total, expenses: expenseList }, index) => (
-              <li key={index} className="list-group-item">
-                <strong>{date}:</strong> Total Expenses = ₹{total.toFixed(2)}
-                <ul>
-                  {expenseList.map((expense, expIndex) => (
-                    <li key={expIndex}>
-                      ₹{expense.amount} - {expense.category}{' '}
-                      <button
-                        className="btn btn-link text-warning"
-                        onClick={() => handleEditExpense(date, expIndex)}
-                      >
-                        Edit
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
         </div>
-      )}
+      </form>
 
-      <div className="mt-4 text-center">
-        <h5>Total Expenses: ₹{totalExpenses.toFixed(2)}</h5>
-        <button className="btn btn-secondary" onClick={handleNextDate}>
-          Next Date
-        </button>
+      <div className="table-responsive mt-4">
+        <h4 className="mb-3">Your Expenses:</h4>
+        <table className="table table-hover">
+          <thead className="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenses.map(expense => (
+              <tr key={expense._id}>
+                <td>{new Date(expense.date).toLocaleDateString()}</td>
+                <td>{expense.category}</td>
+                <td>${expense.amount.toFixed(2)}</td>
+                <td>
+                  <button className="btn btn-warning btn-sm me-2" onClick={() => handleEditExpense(expense)}>Edit</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteExpense(expense._id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      {dailyTotals.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-center">Spending Trend</h4>
-          <div style={{ position: 'relative', height: '300px', width: '100%' }}>
+      
+      <div className="mt-5">
+        <div className="card shadow-sm mb-4">
+          <div className="card-body">
+            <h4 className="card-title text-center mb-4">Daily Spending</h4>
             <Line data={lineChartData} options={chartOptions} />
           </div>
         </div>
-      )}
-
-      {Object.keys(categoryTotals).length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-center">Category Spending Breakdown</h4>
-          <div style={{ position: 'relative', height: '300px', width: '100%' }}>
-            <Pie data={pieChartData} options={chartOptions} />
+        
+        <div className="card shadow-sm">
+          <div className="card-body">
+            <h4 className="card-title text-center mb-4">Category Breakdown</h4>
+            <Pie data={pieChartData} options={pieChartOptions} />
           </div>
         </div>
-      )}
+      </div>
 
-      <div className="mt-4">
-        <div className="card">
+      <div className="mt-5">
+        <h4 className="text-center mb-4">Tips for Better Expense Management</h4>
+        <div className="row g-4">
+          {tips.map((tip, index) => (
+            <div key={index} className="col-md-6 col-lg-4">
+              <div className={`card h-100 border-0 shadow-sm ${tip.color}`}>
+                <div className="card-body text-center">
+                  <div className="display-4 mb-3">{tip.icon}</div>
+                  <p className="card-text">{tip.tip}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <div className="card shadow-sm">
           <div className="card-body">
-            <h5 className="card-title">Tips for Better Expense Management</h5>
-            <ul>
-              <li>Track your expenses daily to stay within your budget.</li>
-              <li>Set aside a specific amount for discretionary spending.</li>
-              <li>Review your spending patterns monthly and adjust as needed.</li>
-              <li>Consider using budgeting apps for better tracking.</li>
-              <li>Always keep a buffer for unexpected expenses.</li>
-            </ul>
+            <br />
+            <h5 className="text-center mb-3">To explore more, navigate to budget page:</h5>
+            <div className="d-flex justify-content-center">
+              <Link to="/budget-management" className="btn btn-secondary">
+                Go to Budget Management
+              </Link>
+            </div>
+            <br />
           </div>
         </div>
       </div>
