@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
 import ExpenseTracker from './pages/ExpenseTracker'; // Import the ExpenseTracker page
+import BudgetManagement from './pages/BudgetManagement';
 import './styles.css';
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
           {/* Protected routes */}
           <Route path="/home" element={<PrivateRoute element={Home} />} />
           <Route path="/expense-tracker" element={<PrivateRoute element={ExpenseTracker} />} /> {/* Add ExpenseTracker */}
+          <Route path="/budget-management" element={<PrivateRoute element={BudgetManagement} />} />
         </Routes>
       </div>
       <Footer />
