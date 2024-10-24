@@ -263,7 +263,7 @@ const Home = () => {
               <Link to="/expense-tracker" className="btn btn-primary me-3">
                 Go to Expense Tracker
               </Link>
-              <Link to="/budget" className="btn btn-secondary">
+              <Link to="/budget-management" className="btn btn-secondary">
                 Go to Budget Management
               </Link>
             </div>
