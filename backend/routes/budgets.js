@@ -1,81 +1,62 @@
 const express = require('express');
-const router = express.Router();
 const Budget = require('../models/Budget');
-const auth = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware'); // Import auth middleware
+const router = express.Router();
 
-// Get all budgets for the user
-router.get('/api/budgets', auth, async (req, res) => {
+// Get all budgets for the authenticated user
+router.get('/', authMiddleware, async (req, res) => {
   try {
-    const budgets = await Budget.find({ userId: req.userId }); // Changed from req.user._id
-    res.json({ budgets });
+    const budgets = await Budget.find({ userId: req.userId });
+    res.json(budgets);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ msg: 'Failed to fetch budgets', error: error.message });
   }
 });
 
-// Create a new budget
-router.post('/api/budgets', auth, async (req, res) => {
-    try {
-      console.log('Received budget creation request:', {
-        body: req.body,
-        userId: req.userId,
-        headers: {
-          ...req.headers,
-          authorization: 'Bearer [hidden]' // Don't log the actual token
-        }
-      });
-  
-      const { category, amount } = req.body;
-      
-      // Validate inputs
-      if (!category) {
-        return res.status(400).json({ message: 'Category is required' });
-      }
-      
-      if (!amount || isNaN(amount) || amount <= 0) {
-        return res.status(400).json({ message: 'Valid amount is required' });
-      }
-  
-      // Check if budget already exists
-      const existingBudget = await Budget.findOne({ 
-        userId: req.userId,
-        category 
-      });
-  
-      console.log('Existing budget check:', {
-        exists: !!existingBudget,
-        category,
-        userId: req.userId
-      });
-  
-      if (existingBudget) {
-        return res.status(400).json({ 
-          message: 'Budget already exists for this category',
-          existingBudget // Include details for debugging
-        });
-      }
-  
-      const budget = new Budget({
-        userId: req.userId,
-        category,
-        amount
-      });
-  
-      await budget.save();
-      console.log('Budget saved successfully:', budget);
-      
-      res.status(201).json({ 
-        message: 'Budget created successfully',
-        budget 
-      });
-    } catch (error) {
-      console.error('Budget creation error:', error);
-      res.status(400).json({ 
-        message: error.message,
-        error: error.toString(),
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
+// Add a new budget for the authenticated user
+router.post('/', authMiddleware, async (req, res) => {
+  const { category, amount } = req.body;
+  try {
+    const newBudget = new Budget({ userId: req.userId, category, amount });
+    await newBudget.save();
+    res.status(201).json(newBudget);
+  } catch (error) {
+    if (error.code === 11000) { // Duplicate key error for unique index
+      return res.status(400).json({ msg: 'Budget already exists for this category' });
     }
-  });
+    res.status(500).json({ msg: 'Failed to add budget', error: error.message });
+  }
+});
+
+// Update an existing budget
+router.put('/:budgetId', authMiddleware, async (req, res) => {
+  const { category, amount } = req.body;
+  try {
+    const budget = await Budget.findOneAndUpdate(
+      { _id: req.params.budgetId, userId: req.userId },
+      { category, amount },
+      { new: true }
+    );
+    if (!budget) {
+      return res.status(404).json({ msg: 'Budget not found' });
+    }
+    res.json(budget);
+  } catch (error) {
+    res.status(500).json({ msg: 'Failed to update budget', error: error.message });
+  }
+});
+
+// Delete a budget
+router.delete('/:budgetId', authMiddleware, async (req, res) => {
+  try {
+    const budget = await Budget.findOneAndDelete({ _id: req.params.budgetId, userId: req.userId });
+    if (!budget) {
+      return res.status(404).json({ msg: 'Budget not found' });
+    }
+    res.json({ msg: 'Budget deleted' });
+  } catch (error) {
+    res.status(500).json({ msg: 'Failed to delete budget', error: error.message });
+  }
+});
 
 module.exports = router;
