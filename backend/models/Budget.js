@@ -12,12 +12,10 @@ const budgetSchema = new mongoose.Schema({
   },
   amount: {
     type: Number,
-    required: true,
-    min: 0
+    required: true
   }
-}, { timestamps: true });
+});
 
-// Compound index to ensure unique category per user
-budgetSchema.index({ userId: 1, category: 1 }, { unique: true });
+budgetSchema.index({ userId: 1, category: 1 }, { unique: true }); // Ensure one budget per category per user
 
 module.exports = mongoose.model('Budget', budgetSchema);
