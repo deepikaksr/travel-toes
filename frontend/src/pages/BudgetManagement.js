@@ -178,9 +178,6 @@ const BudgetManagement = () => {
         throw new Error(errorData.message || 'Failed to set budget');
       }
 
-      const data = await response.json();
-
-      // Update local state based on the response
       await fetchBudgets(); // Refresh all budgets to ensure consistency
 
       // Reset form
@@ -325,8 +322,9 @@ const BudgetManagement = () => {
         <h4>Balance: ${calculateBalance().toFixed(2)}</h4>
       </div>
 
-      <div className="row">
-        <div className="col-md-5">
+      {/* Centered Budget Setting Box */}
+      <div className="row justify-content-center mb-4">
+        <div className="col-md-6">
           <div className="card shadow-sm">
             <div className="card-body">
               <h5 className="card-title">Set Budget</h5>
@@ -389,17 +387,6 @@ const BudgetManagement = () => {
             </div>
           </div>
         </div>
-
-        <div className="col-md-7">
-          <div className="card shadow-sm">
-            <div className="card-body">
-              <h5 className="card-title">Budget vs. Spending</h5>
-              <div className="chart-container">
-                <Bar data={chartData} options={chartOptions} />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="card shadow-sm mt-4">
@@ -446,6 +433,20 @@ const BudgetManagement = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Visualization moved after the table */}
+      <div className="row justify-content-center mt-4 mb-4">
+        <div className="col-md-12">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h5 className="card-title">Budget vs. Spending</h5>
+              <div className="chart-container">
+                <Bar data={chartData} options={chartOptions} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
