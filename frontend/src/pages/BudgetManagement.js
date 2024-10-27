@@ -20,6 +20,55 @@ ChartJS.register(
   Legend
 );
 
+const BudgetTips = () => {
+  const tips = [
+    {
+      icon: "📱",
+      text: "Use the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings and debt repayment.",
+    },
+    {
+      icon: "🎯",
+      text: "Set SMART financial goals: Specific, Measurable, Achievable, Relevant, and Time-bound.",
+    },
+    {
+      icon: "💡",
+      text: "Compare prices before major purchases and look for discounts or seasonal sales to maximize savings.",
+    },
+    {
+      icon: "🏦",
+      text: "Save at least 3-6 months of expenses in an emergency fund for unexpected costs.",
+    },
+    {
+      icon: "📊",
+      text: "Review and adjust your budget regularly - weekly check-ins help catch overspending early.",
+    },
+    {
+      icon: "✂️",
+      text: "Cut unnecessary subscriptions and automate savings to reach your financial goals faster.",
+    }
+  ];
+
+  return (
+    <div className="mt-4 mb-4">
+      <h2 className="text-center mb-4">
+        Tips for Better Expense Management
+      </h2>
+      <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {tips.map((tip, index) => (
+          <div key={index} className="col">
+            <div className="card h-100 border shadow-sm">
+              <div className="card-body text-center">
+                <span style={{ fontSize: '2.5rem' }}>{tip.icon}</span>
+                <p className="card-text mt-2 mb-0">{tip.text}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const BudgetManagement = () => {
   const [budgets, setBudgets] = useState([]);
   const [category, setCategory] = useState('Food');
@@ -450,6 +499,9 @@ const BudgetManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Budget Tips Section */}
+      <BudgetTips />
 
       <div className="card shadow-sm mt-4 mb-4">
         <div className="card-body text-center">
