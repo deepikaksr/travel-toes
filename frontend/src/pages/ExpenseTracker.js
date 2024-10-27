@@ -287,33 +287,27 @@ const ExpenseTracker = () => {
   const tips = [
     {
       icon: "📊",
-      tip: "Track your spending regularly to stay aware of your financial situation.",
-      color: "bg-blue-50"
+      tip: "Track your spending regularly to stay aware of your financial situation."
     },
     {
       icon: "🎯",
-      tip: "Set a budget for different categories and stick to it.",
-      color: "bg-green-50"
+      tip: "Set a budget for different categories and stick to it."
     },
     {
       icon: "📈",
-      tip: "Review your expenses at the end of the month to identify areas for improvement.",
-      color: "bg-yellow-50"
+      tip: "Review your expenses at the end of the month to identify areas for improvement."
     },
     {
       icon: "💰",
-      tip: "Use cash for discretionary spending to help limit overspending.",
-      color: "bg-purple-50"
+      tip: "Use cash for discretionary spending to help limit overspending."
     },
     {
       icon: "🏦",
-      tip: "Consider creating an emergency fund to handle unexpected expenses.",
-      color: "bg-pink-50"
+      tip: "Consider creating an emergency fund to handle unexpected expenses."
     },
     {
       icon: "🛒",
-      tip: "Prioritize needs over wants when making purchases to avoid impulsive buying.",
-      color: "bg-orange-50"
+      tip: "Prioritize needs over wants when making purchases to avoid impulsive buying."
     }
   ];
 
@@ -324,70 +318,75 @@ const ExpenseTracker = () => {
         <h3 className="text-muted">Total Expenses: ${totalExpenses.toFixed(2)}</h3>
       </div>
       
-      <form onSubmit={handleSubmit} className="bg-light p-4 rounded shadow-sm">
-        <div className="mb-3">
-          <label htmlFor="date" className="form-label">Date:</label>
-          <input
-            type="date"
-            id="date"
-            className="form-control"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-          />
+      {/* Centered container with maximum width */}
+      <div className="row justify-content-center">
+        <div className="col-12 col-md-8 col-lg-6">
+          <form onSubmit={handleSubmit} className="bg-light p-4 rounded shadow-sm">
+            <div className="mb-3">
+              <label htmlFor="date" className="form-label">Date:</label>
+              <input
+                type="date"
+                id="date"
+                className="form-control"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="mb-3">
+              <label htmlFor="amount" className="form-label">Amount:</label>
+              <input
+                type="number"
+                id="amount"
+                className="form-control"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                step="0.01"
+                min="0"
+              />
+            </div>
+            
+            <div className="mb-3">
+              <label htmlFor="category" className="form-label">Category:</label>
+              <select
+                id="category"
+                className="form-select"
+                value={category}
+                onChange={(e) => {
+                  if (e.target.value === 'Other') {
+                    setCustomCategory('');
+                  }
+                  setCategory(e.target.value);
+                }}
+              >
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Other">Other</option>
+              </select>
+              {category === 'Other' && (
+                <input
+                  type="text"
+                  className="form-control mt-2"
+                  placeholder="Specify category"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  required
+                />
+              )}
+            </div>
+            
+            <div className="d-grid">
+              <button type="submit" className="btn btn-primary">
+                {editingExpense ? 'Update Expense' : 'Add Expense'}
+              </button>
+            </div>
+          </form>
         </div>
-        
-        <div className="mb-3">
-          <label htmlFor="amount" className="form-label">Amount:</label>
-          <input
-            type="number"
-            id="amount"
-            className="form-control"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-            step="0.01"
-            min="0"
-          />
-        </div>
-        
-        <div className="mb-3">
-          <label htmlFor="category" className="form-label">Category:</label>
-          <select
-            id="category"
-            className="form-select"
-            value={category}
-            onChange={(e) => {
-              if (e.target.value === 'Other') {
-                setCustomCategory('');
-              }
-              setCategory(e.target.value);
-            }}
-          >
-            <option value="Food">Food</option>
-            <option value="Transport">Transport</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Other">Other</option>
-          </select>
-          {category === 'Other' && (
-            <input
-              type="text"
-              className="form-control mt-2"
-              placeholder="Specify category"
-              value={customCategory}
-              onChange={(e) => setCustomCategory(e.target.value)}
-              required
-            />
-          )}
-        </div>
-        
-        <div className="d-grid">
-          <button type="submit" className="btn btn-primary">
-            {editingExpense ? 'Update Expense' : 'Add Expense'}
-          </button>
-        </div>
-      </form>
+      </div>
 
       <div className="table-responsive mt-4">
         <h4 className="mb-3">Your Expenses:</h4>
