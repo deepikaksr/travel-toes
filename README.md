@@ -104,8 +104,6 @@ const budgetSchema = new mongoose.Schema({
 
 ## 🖼️ GUI Screenshots
 
-> ⚠️ **Note:** Replace the image paths below with the actual image file URLs after uploading to your repository.
-
 ### 🔑 SignUp Page  
 ![SignUp](images/signup.png)
 
@@ -116,10 +114,12 @@ const budgetSchema = new mongoose.Schema({
 ![Home](images/home.png)
 
 ### 📊 Expense Tracker Page  
-![Expense Tracker](images/expense_tracker.png)
+![Expense Tracker 1](images/exp_tracker-1.png)  
+![Expense Tracker 2](images/exp_tracker-2.png)
 
 ### 💰 Budget Management  
-![Budget](images/budget.png)
+![Budget 1](images/budget_manager-1.png)  
+![Budget 2](images/budget_manager-2.png)
 
 ---
 
