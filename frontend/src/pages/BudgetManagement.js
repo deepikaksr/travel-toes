@@ -342,6 +342,7 @@ const BudgetManagement = () => {
         beginAtZero: true,
       },
     },
+<<<<<<< HEAD
     animation: {
       duration: 2000,  // Duration for each animation loop
       onComplete: function() {
@@ -355,6 +356,9 @@ const BudgetManagement = () => {
     },
   };
   
+=======
+  };
+>>>>>>> 9bc131b5061c348ea59633ceb14f056c32a2749d
 
   if (isLoading) {
     return (
@@ -517,16 +521,26 @@ const BudgetManagement = () => {
 
       <div className="card shadow-sm mt-4 mb-4">
         <div className="card-body text-center">
+<<<<<<< HEAD
         <br />
+=======
+>>>>>>> 9bc131b5061c348ea59633ceb14f056c32a2749d
           <h5 className="mb-3">To explore more, navigate to expense page:</h5>
           <Link to="/expense-tracker" className="btn btn-secondary">
             Go to Expense Tracker
           </Link>
         </div>
+<<<<<<< HEAD
         <br />
+=======
+>>>>>>> 9bc131b5061c348ea59633ceb14f056c32a2749d
       </div>
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default BudgetManagement;
+=======
+export default BudgetManagement;
+>>>>>>> 9bc131b5061c348ea59633ceb14f056c32a2749d

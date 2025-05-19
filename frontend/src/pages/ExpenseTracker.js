@@ -465,4 +465,8 @@ const ExpenseTracker = () => {
   );
 };
 
+<<<<<<< HEAD
 export default ExpenseTracker;
+=======
+export default ExpenseTracker;
+>>>>>>> 9bc131b5061c348ea59633ceb14f056c32a2749d
