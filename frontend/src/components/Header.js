@@ -20,7 +20,7 @@ const Header = () => {
               <Link className="nav-link" to="/expense-tracker">Expense Tracker</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/budget">Budget Management</Link>
+              <Link className="nav-link" to="/budget-management">Budget Management</Link>
             </li>
             <li className="nav-item">
               <Link className="nav-link" to="/signup">Signup</Link>

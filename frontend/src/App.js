@@ -1,4 +1,3 @@
-// App.js
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Header from './components/Header';
@@ -6,6 +5,8 @@ import Footer from './components/Footer';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
+import ExpenseTracker from './pages/ExpenseTracker'; // Import the ExpenseTracker page
+import BudgetManagement from './pages/BudgetManagement';
 import './styles.css';
 
 function App() {
@@ -15,8 +16,8 @@ function App() {
   };
 
   // Private route component to protect certain routes
-  const PrivateRoute = ({ element: Component, ...rest }) => {
-    return isAuthenticated() ? <Component {...rest} /> : <Navigate to="/" />;
+  const PrivateRoute = ({ element: Component }) => {
+    return isAuthenticated() ? <Component /> : <Navigate to="/" />;
   };
 
   return (
@@ -30,6 +31,8 @@ function App() {
 
           {/* Protected routes */}
           <Route path="/home" element={<PrivateRoute element={Home} />} />
+          <Route path="/expense-tracker" element={<PrivateRoute element={ExpenseTracker} />} /> {/* Add ExpenseTracker */}
+          <Route path="/budget-management" element={<PrivateRoute element={BudgetManagement} />} />
         </Routes>
       </div>
       <Footer />

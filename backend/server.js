@@ -3,6 +3,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
+const expenseRoutes = require('./routes/expenses'); 
+const budgetRoutes = require('./routes/budgets');
+require('dotenv').config(); // Load environment variables
 
 const app = express();
 
@@ -10,15 +13,19 @@ const app = express();
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json()); // Parse JSON request bodies
 
-// Database connection (update with your MongoDB URI)
-require('dotenv').config(); // Ensure you have this line at the top of your server.js
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// Database connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.error('Error connecting to MongoDB:', err);
+  });
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/expenses', expenseRoutes); 
+app.use('/api/budgets', budgetRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;
